@@ -2747,6 +2747,11 @@ int main(int argc, char** argv)
 	fflush(stdout);
 
 	for (u = 0; u < sizeof(Todo) / sizeof(*Todo); ++u) {
+		if (!Todo[u].File) {
+			printf("ERROR: No file name!\n");
+			fflush(stdout);
+			continue;
+		}
 		if (CDType & CD_MAC) {
 			strcpy(filename, Todo[u].File);
 			ConvertToMac(filename);
