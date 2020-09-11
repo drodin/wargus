@@ -259,6 +259,11 @@ target_link_libraries(wargus ${wargus_LIBS})
 
 add_executable(wartool ${wartool_SRCS} ${wartool_HDRS})
 target_link_libraries(wartool ${wartool_LIBS})
+if(MINGW)
+	add_definitions(-DWIN32)
+	target_link_libraries(wargus shlwapi)
+	target_link_libraries(wartool shlwapi)
+endif()
 
 if(WIN32 AND MINGW AND ENABLE_STATIC)
 	set_target_properties(pudconvert PROPERTIES LINK_FLAGS "${LINK_FLAGS} -static-libgcc -static-libstdc++")
