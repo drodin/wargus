@@ -27,8 +27,29 @@
 #
 #
 
+option(HUNTER_ENABLED "Enable Hunter package manager" OFF)
+
+if(HUNTER_ENABLED)
+# Example of stepping into external sources.
+# USE CAREFULLY, please check documentation:
+# * https://docs.hunter.sh/en/latest/reference/user-variables.html#hunter-keep-package-sources
+option(HUNTER_KEEP_PACKAGE_SOURCES "Keep third party sources" ON)
+
+option(HUNTER_STATUS_DEBUG "Print debug info" OFF)
+
+include(cmake/HunterGate.cmake)
+HunterGate(
+    URL "https://github.com/drodin/hunter/archive/a4610c2.tar.gz"
+    SHA1 "2607fc0c6330aca21caa16e9170f62f10ccad9a0"
+)
+endif()
+
 project(wargus)
+if(HUNTER_ENABLED)
+cmake_minimum_required(VERSION 3.2)
+else()
 cmake_minimum_required(VERSION 2.6)
+endif()
 set(WARGUS_VERSION 2.4.1)
 
 # Wargus sources
@@ -80,9 +101,11 @@ set(warextract_SRCS
 	warextract.c
 )
 
+if(NOT HUNTER_ENABLED)
 # Additional platform checks
 if(NOT (WIN32 AND MSVC))
 	find_package(PkgConfig QUIET REQUIRED)
+endif()
 endif()
 
 # Find all libraries
@@ -96,9 +119,22 @@ endif()
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules ${CMAKE_MODULE_PATH})
 
 find_package(Stratagus REQUIRED)
+if(HUNTER_ENABLED)
+hunter_add_package(PNG)
+hunter_add_package(ZLIB)
+hunter_add_package(BZip2)
+find_package(PNG CONFIG REQUIRED)
+find_package(ZLIB CONFIG REQUIRED)
+find_package(BZip2 CONFIG REQUIRED)
+set(PNG_LIBRARIES PNG::png)
+set(ZLIB_LIBRARIES ZLIB::zlib)
+#set(BZIP2_LIBRARIES BZip2::bz2)
+get_target_property(BZIP2_LIBRARIES BZip2::bz2 LOCATION)
+else()
 find_package(PNG REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(StormLib)
+endif()
 
 if(WIN32)
 	find_package(MakeNSIS)
@@ -178,6 +214,7 @@ endif()
 
 # For now, doesn't compile on OS X with StormLib
 if (WITH_STORMLIB)
+if(NOT HUNTER_ENABLED)
 	if (NOT STORMLIB_FOUND AND UNIX)
 	  find_program(MAKE make)
 	  if (MAKE)
@@ -198,6 +235,12 @@ if (WITH_STORMLIB)
 		endif()
 	  endif()
 	endif()
+else()
+	add_subdirectory(StormLib)
+	set(STORMLIB_FOUND true)
+	set(STORMLIB_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/StormLib/src)
+	set(STORMLIB_LIBRARY storm)
+endif()
 
 	if (STORMLIB_FOUND)
 		add_definitions(-DUSE_STORMLIB -D__STORMLIB_SELF__)
